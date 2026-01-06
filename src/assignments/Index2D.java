@@ -19,6 +19,15 @@ public class Index2D implements Pixel2D {
     public int getY() {
         return _y;
     }
+    /**
+     * Computes the Euclidean distance between this pixel and another pixel.
+     * The calculation is based on the formula:
+     * sqrt((x1 - x2)^2 + (y1 - y2)^2).
+     *
+     * @param t another pixel
+     * @return the Euclidean distance between the two pixels
+     * @throws RuntimeException if p2 is null
+     */
     public double distance2D(Pixel2D t) {
         checkNotNull(t);
         int dx = _x - t.getX();
