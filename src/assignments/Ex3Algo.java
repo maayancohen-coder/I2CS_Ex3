@@ -35,36 +35,23 @@ public class Ex3Algo implements PacManAlgo {
     public int move(PacmanGame game) {
         int code = 0;
         int[][] board = game.getGame(0);
-        printBoard(board);
+        GhostCL[] ghosts = game.getGhosts(code);
+        printGhosts(ghosts);
         int blue = Game.getIntColor(Color.BLUE, code);
         int pink = Game.getIntColor(Color.PINK, code);
         int black = Game.getIntColor(Color.BLACK, code);
         int green = Game.getIntColor(Color.GREEN, code);
         if (_count == 0 || _count == 300) {
+            printBoard(board);
             System.out.println("Blue=" + blue + ", Pink=" + pink + ", Black=" + black + ", Green=" + green);
             String pos = game.getPos(code).toString();
             System.out.println("Pacman coordinate: " + pos);
-            GhostCL[] ghosts = game.getGhosts(code);
-            printGhosts(ghosts);
             int up = Game.UP, left = Game.LEFT, down = Game.DOWN, right = Game.RIGHT;
         }
         _count++;
-        int dir = 0;
         Map map = new Map(board);
         Pixel2D posP = parsePos(game.getPos(code).toString());
-        Pixel2D target = nearestFood(map, posP, pink, blue);
-        Pixel2D [] path = map.shortestPath(posP, target, blue);
-        if (path[1].getX()<posP.getX()){
-            dir = Game.LEFT;
-        }
-        else if (path[1].getX()>posP.getX()){
-            dir = Game.RIGHT;
-        } else if (path[0].getY()<posP.getY()) {
-            dir = Game.DOWN;
-        }
-        else if (path[0].getY()>posP.getY()){
-            dir = Game.UP;
-        }
+        int dir = chaseColor(map,posP,pink,blue);
         return dir;
     }
 
@@ -131,15 +118,14 @@ public class Ex3Algo implements PacManAlgo {
         }
         return new Index2D(x, y);
     }
-
-    private static Pixel2D nearestFood(Map map, Pixel2D pos, int foodColor, int wallColor) {
+    private static Pixel2D nearestColor(Map map, Pixel2D pos, int targetColor, int wallColor) {
         Pixel2D nearest = null;
         Map2D mapAllDistance = map.allDistance(pos, wallColor);
         int min = Integer.MAX_VALUE;
         for (int i = 0; i < map.getWidth(); i++) {
             for (int j = 0; j < map.getHeight(); j++) {
                 Pixel2D tmp = new Index2D(i, j);
-                if (map.getPixel(tmp.getX(), tmp.getY()) == foodColor
+                if (map.getPixel(tmp.getX(), tmp.getY()) ==targetColor
                         && mapAllDistance.getPixel(tmp) != -1) {
                     int d = mapAllDistance.getPixel(tmp);
                     if (d < min) {
@@ -150,5 +136,46 @@ public class Ex3Algo implements PacManAlgo {
             }
         }
         return nearest;
+    }
+
+    private static int chaseColor(Map map, Pixel2D pos, int targetColor, int wallColor) {
+        int dir = Game.STAY;
+        Pixel2D target = nearestColor(map, pos, targetColor, wallColor);
+        if (target == null) return Game.STAY;
+        Pixel2D [] path = map.shortestPath(pos, target, wallColor);
+        if (path == null || path.length < 2 || path[1] == null) return Game.STAY;
+        if (path[1].getX()<pos.getX()){
+            dir = Game.LEFT;
+        }
+        else if (path[1].getX()>pos.getX()){
+            dir = Game.RIGHT;
+        } else if (path[1].getY()<pos.getY()) {
+            dir = Game.DOWN;
+        }
+        else if (path[1].getY()>pos.getY()){
+            dir = Game.UP;
+        }
+        if (pos.getX()== 0 && path[1].getX()!=1 ){
+            dir = Game.LEFT;
+        }
+        if (pos.getX()==map.getWidth()-1 && path[1].getX()!=map.getWidth()-2){
+            dir = Game.RIGHT;
+        }
+        return dir;
+    }
+    private static int runAwayFromGhosts(Map map, Index2D pos, GhostCL[] ghosts , int wallColor) {
+        Map2D allDistanceGhost = map.allDistance(pos,wallColor);
+        Pixel2D temp = null;
+        for (GhostCL ghost : ghosts) {
+            String posG = ghost.getPos(0).toString();
+            Pixel2D posP = parsePos(posG);
+            if (allDistanceGhost.getPixel(posP) <= 7) {
+                temp = new Index2D(pos.getX()+1, pos.getY());
+            }
+        }
+    }
+    private static Pixel2D nearestGhost(Map map, Index2D pos, GhostCL[] ghosts , int wallColor) {
+
+
     }
 }
