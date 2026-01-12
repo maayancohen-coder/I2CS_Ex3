@@ -34,6 +34,19 @@ public class Index2D implements Pixel2D {
         int dy = _y - t.getY();
         return Math.sqrt(dx * dx + dy * dy);
     }
+    public Index2D(String s) {
+        try {
+            String[] a = s.split(",");
+            double x_double = Double.parseDouble(a[0]);
+            double y_double = Double.parseDouble(a[1]);
+            this._x = (int) x_double;
+            this._y = (int) y_double;
+        } catch (Exception e) {
+            System.err.println("Error parsing position string: " + s);
+            this._x = 0;
+            this._y = 0;
+        }
+    }
     @Override
     public String toString() {
         return getX()+","+getY();
