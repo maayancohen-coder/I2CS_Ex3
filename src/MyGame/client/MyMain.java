@@ -11,7 +11,6 @@ import exe.ex3.game.PacManAlgo;
  * - renders UI (StdDraw)
  * - handles input (InputController)
  * - schedules ticks and steps (manual/auto timing)
- *
  * Server-side game rules are in {@link MyGameServer}.
  */
 public class MyMain {
