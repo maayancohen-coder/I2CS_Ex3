@@ -1,5 +1,6 @@
-package MyGame;
+package MyGame.client;
 
+import MyGame.server.MyGameServer;
 import assignments.StdDraw;
 import exe.ex3.game.Game;
 
@@ -11,7 +12,6 @@ public class MyGameUI {
     private final int cell;
     private final int hud;
 
-    // save canvas size (because StdDraw doesn't have getXscaleMax)
     private int canvasW = 0;
     private int canvasH = 0;
 
@@ -34,7 +34,7 @@ public class MyGameUI {
         StdDraw.enableDoubleBuffering();
     }
 
-    public void draw(int[][] board, int pacX, int pacY, int pacDir, MyGame.Ghost[] ghosts, String hudLine) {
+    public void draw(int[][] board, int pacX, int pacY, int pacDir, MyGameServer.Ghost[] ghosts, String hudLine) {
         int w = board.length;
         int h = board[0].length;
 
@@ -85,21 +85,17 @@ public class MyGameUI {
             }
         }
 
-        // Ghosts (images) - show only after release (feel free to remove this if you want)
+        // Ghosts (images) - released only
         if (ghosts != null) {
-            long now = System.currentTimeMillis();
-
-            for (MyGame.Ghost g : ghosts) {
+            for (MyGameServer.Ghost g : ghosts) {
                 if (!g.released) continue;
 
                 double gx = g.x * cell + cell * 0.5;
                 double gy = g.y * cell + cell * 0.5;
 
-                // 👻 גודל הרוח
-                double gSize = cell * 0.95;
-                if (g.isEatable(now)) {
-                    gSize = cell * 0.45;   // יותר קטן
-                }
+                // ✅ קטן משמעותית כשהרוח אכילה
+                double scale = g.isEatable() ? 0.55 : 0.95;
+                double gSize = cell * scale;
 
                 URL gurl = MyGameUI.class.getResource(g.imgPath);
                 if (gurl != null) {
@@ -108,16 +104,15 @@ public class MyGameUI {
             }
         }
 
-
-        // Pacman (image by direction) - YOUR filenames
+        // Pacman (image by direction)
         double px = pacX * cell + cell * 0.5;
         double py = pacY * cell + cell * 0.5;
         double size = cell * 0.95;
 
         String imgPath = "/media/p1.left.png";
-        if (pacDir == MyGame.RIGHT) imgPath = "/media/p1.right.png";
-        else if (pacDir == MyGame.UP) imgPath = "/media/p1.up.png";
-        else if (pacDir == MyGame.DOWN) imgPath = "/media/p1.down.png";
+        if (pacDir == MyGameServer.RIGHT) imgPath = "/media/p1.right.png";
+        else if (pacDir == MyGameServer.UP) imgPath = "/media/p1.up.png";
+        else if (pacDir == MyGameServer.DOWN) imgPath = "/media/p1.down.png";
 
         URL pacUrl = MyGameUI.class.getResource(imgPath);
         if (pacUrl != null) {
