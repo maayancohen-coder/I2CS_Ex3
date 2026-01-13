@@ -7,58 +7,94 @@ import assignments.StdDraw;
 import exe.ex3.game.PacManAlgo;
 
 /**
- * Application entry point (client).
+ * Application entry point of the game client.
  *
- * <p>This class is responsible only for the <b>runtime loop</b>:</p>
- * <ul>
- *   <li>Bootstraps the {@link MyGameServer} (game state + rules).</li>
- *   <li>Initializes {@link MyGameUI} (rendering with {@link StdDraw}).</li>
- *   <li>Reads input via {@link InputController}.</li>
- *   <li>Runs either <b>MANUAL</b> mode (player controls Pac-Man) or <b>AUTO</b> mode (algorithm controls Pac-Man).</li>
- * </ul>
+ * HOW TO PLAY
+ * -----------
+ * SPACE  – start or pause the game
+ * M      – toggle between manual and automatic mode
  *
- * <h2>Timing model</h2>
- * <ul>
- *   <li><b>Manual mode:</b> Pac-Man moves only on input; ghosts advance by calling {@link MyGameServer#tick()}
- *       on a fixed timer ({@link #GHOST_TICK_MS}).</li>
- *   <li><b>Auto mode:</b> The algorithm chooses direction via {@link PacManAlgo#move(exe.ex3.game.PacmanGame)}.
- *       The adapter {@link MyPacmanGameAdapter#move(int)} performs the step (Pac move + tick) on a fixed timer
- *       ({@link #AUTO_STEP_MS}).</li>
- * </ul>
+ * MANUAL – control Pac-Man using the arrow keys or WASD
+ * AUTO   – Pac-Man is controlled automatically by the algorithm
  *
- * <h2>Controls</h2>
- * <ul>
- *   <li><b>SPACE</b> - start / pause</li>
- *   <li><b>M</b> - toggle MANUAL/AUTO</li>
- *   <li><b>Arrows / WASD</b> - manual direction</li>
- *   <li><b>Q</b> - quit (shows end screen)</li>
- * </ul>
+ * Goal:
+ * Eat all pink pellets to win the game.
+ * Green pellets make ghosts eatable for a short time.
+ *
+ * Q – quit the game and show the end screen
+ *
+ * --------------------------------------------------
+ *
+ * OVERVIEW
+ * --------
+ * This class manages the runtime loop on the client side only.
+ * It is responsible for rendering, input polling, and deciding when to advance the simulation.
+ * All game rules, collisions, scoring, and state transitions are handled by MyGameServer.
+ *
+ * MAIN COMPONENTS
+ * ---------------
+ * MyGameServer
+ *   Owns the game state and implements the rules.
+ *
+ * MyGameUI
+ *   Renders the current state using StdDraw.
+ *
+ * InputController
+ *   Polls keyboard input and returns user intent (pause, mode toggle, directions, quit).
+ *
+ * Auto algorithm and adapter
+ *   In AUTO mode, Ex3Algo expects a PacmanGame interface.
+ *   MyPacmanGameAdapter bridges MyGameServer to that interface.
+ *
+ * TIMING MODEL
+ * ------------
+ * Manual mode:
+ *   Pac-Man moves only when the user provides direction input.
+ *   Ghosts and world updates advance by calling server.tick() periodically
+ *   according to GHOST_TICK_MS.
+ *
+ * Auto mode:
+ *   The algorithm selects a direction using algo.move(adapter).
+ *   The adapter performs adapter.move(dir), which includes a Pac-Man step and a server tick,
+ *   according to AUTO_STEP_MS.
+ *
+ * Notes:
+ *   LOOP_PAUSE_MS is a small delay for responsiveness and lower CPU usage.
+ *   It is not the gameplay tick rate.
  */
 public class MyMain {
 
     /**
      * Small loop pause to reduce CPU usage and keep rendering responsive.
-     * This is not the gameplay tick rate (see {@link #GHOST_TICK_MS} and {@link #AUTO_STEP_MS}).
+     * This is not the gameplay tick rate.
      */
     private static final int LOOP_PAUSE_MS  = 10;
 
     /**
-     * Manual mode: ghost/world tick interval (ms).
-     * Pac-Man moves immediately on input; {@link MyGameServer#tick()} advances ghosts/collisions/score.
+     * Manual mode tick interval in milliseconds.
+     * Controls how often server.tick() is called while the game is running in MANUAL mode.
      */
     private static final int GHOST_TICK_MS  = 120;
 
     /**
-     * Auto mode: interval (ms) between algorithm steps.
-     * Each auto step calls {@code algo.move(adapter)} and then {@code adapter.move(dir)} (which includes a tick).
+     * Auto mode step interval in milliseconds.
+     * Controls how often the algorithm selects a move and the adapter advances the simulation.
      */
     private static final int AUTO_STEP_MS   = 120;
 
     /**
-     * Program entry.
+     * Program entry point.
      *
-     * <p>Creates server + UI + optional algorithm and runs the main loop
-     * until the server status leaves {@link MyGameServer#PLAY}.</p>
+     * Execution flow:
+     * 1. Create and initialize the server level.
+     * 2. Create the UI and initialize the canvas according to the board dimensions.
+     * 3. Create an adapter and an algorithm for AUTO mode.
+     * 4. Enter the main loop:
+     *    - draw current frame
+     *    - poll input
+     *    - apply mode toggles and pause toggles
+     *    - advance the simulation according to the active mode and timing
+     * 5. When the server is no longer in PLAY status, show the end screen.
      *
      * @param args command line arguments (not used)
      */
@@ -72,26 +108,26 @@ public class MyMain {
         MyGameUI ui = new MyGameUI(36, 40);
         ui.initCanvas(server.getBoard().length, server.getBoard()[0].length);
 
-        // -------- Auto Algo --------
-        // Adapter makes our server compatible with the engine's PacmanGame API expected by Ex3Algo.
+        // -------- Auto Algorithm --------
+        // Ex3Algo works with the PacmanGame interface, so we wrap our server with an adapter.
         MyPacmanGameAdapter adapter = new MyPacmanGameAdapter(server);
         PacManAlgo algo = new Ex3Algo();
 
-        // Default: MANUAL + PAUSED (must press SPACE to start).
+        // Default state: manual control, paused until SPACE is pressed.
         boolean autoMode = false;
         boolean running  = false;
 
-        // Timing state (in ms)
+        // Timing state used for periodic ticking / stepping.
         long lastGhostTick = 0;
         long lastAutoStep  = 0;
 
-        // Input handling (edge detection for toggles)
+        // Input polling and edge detection.
         InputController input = new InputController();
 
         // -------- Main loop --------
         while (server.getStatus() == MyGameServer.PLAY) {
 
-            // Render a frame
+            // Render one frame based on the current server state.
             ui.draw(
                     server.getBoard(),
                     server.getPacX(), server.getPacY(), server.getPacDir(),
@@ -99,16 +135,16 @@ public class MyMain {
                     buildHud(server, autoMode, running)
             );
 
-            // Read user input (depends on current state)
+            // Poll input for this frame (directions, toggles, quit).
             InputController.Actions a = input.poll(running, autoMode);
 
-            // Quit immediately (show final screen)
+            // Quit immediately and show the end screen.
             if (a.quit) {
                 ui.drawEndScreen(server.isWon());
                 return;
             }
 
-            // Start/Pause toggle
+            // Toggle running state (pause/resume).
             if (a.spaceToggle) {
                 running = !running;
                 lastGhostTick = 0;
@@ -116,7 +152,7 @@ public class MyMain {
                 input.resetEdges();
             }
 
-            // Manual/Auto toggle
+            // Toggle mode (manual/auto).
             if (a.modeToggle) {
                 autoMode = !autoMode;
                 lastGhostTick = 0;
@@ -124,7 +160,7 @@ public class MyMain {
                 input.resetEdges();
             }
 
-            // If paused, do not advance simulation
+            // If paused, do not advance simulation.
             if (!running) {
                 StdDraw.pause(LOOP_PAUSE_MS);
                 continue;
@@ -133,7 +169,9 @@ public class MyMain {
             long now = System.currentTimeMillis();
 
             if (!autoMode) {
-                // MANUAL: Pac-Man steps only on input; ghosts tick on timer
+                // MANUAL:
+                // Pac-Man moves one step per user input.
+                // Ghosts/world advance periodically via server.tick().
                 if (a.arrowDir != MyGameServer.STAY) server.movePacByDir(a.arrowDir);
                 if (a.wasdDir  != MyGameServer.STAY) server.movePacByDir(a.wasdDir);
 
@@ -142,7 +180,8 @@ public class MyMain {
                     lastGhostTick = now;
                 }
             } else {
-                // AUTO: algo decides; adapter.move includes tick
+                // AUTO:
+                // The algorithm selects a direction; adapter.move(dir) applies the move and advances time.
                 if (lastAutoStep == 0 || now - lastAutoStep >= AUTO_STEP_MS) {
                     int dir = algo.move(adapter);
                     adapter.move(dir);
@@ -150,23 +189,24 @@ public class MyMain {
                 }
             }
 
-            // Small delay for responsiveness and CPU friendliness
+            // Small delay for responsiveness and CPU friendliness.
             StdDraw.pause(LOOP_PAUSE_MS);
         }
 
-        // Game ended (won or lost)
+        // Game ended (won or lost).
         ui.drawEndScreen(server.isWon());
     }
 
     /**
-     * Builds the HUD line shown at the top of the screen.
+     * Builds a compact HUD line displayed at the top of the screen.
      *
-     * <p>UI text lives on the client side (here) to keep the server purely game-logic.</p>
+     * This method intentionally stays on the client side:
+     * the server should remain focused on game logic and state, not UI strings.
      *
-     * @param server   current server instance
-     * @param autoMode {@code true} if AUTO mode is active
-     * @param running  {@code true} if simulation is currently running (not paused)
-     * @return a compact, human-readable status line
+     * @param server   active server instance
+     * @param autoMode true if AUTO mode is enabled
+     * @param running  true if the simulation is currently running (not paused)
+     * @return a human-readable HUD string
      */
     private static String buildHud(MyGameServer server, boolean autoMode, boolean running) {
         return "Mode: " + (autoMode ? "AUTO" : "MANUAL") +

@@ -8,50 +8,65 @@ import java.awt.*;
 import java.net.URL;
 
 /**
- * Client-side renderer (UI) for {@link MyGameServer}.
+ * Client-side renderer for the game.
  *
- * <p>Responsibilities:</p>
- * <ul>
- *   <li>Initialize the drawing canvas and coordinate system.</li>
- *   <li>Render the board tiles (walls + pellets).</li>
- *   <li>Render Pac-Man and ghosts as sprites (with graceful fallback if resources are missing).</li>
- *   <li>Render a simple HUD line above the board.</li>
- * </ul>
+ * OVERVIEW
+ * --------
+ * This class draws the current game state on screen using StdDraw.
+ * It is responsible for visualization only.
+ * It does not update game logic, does not move entities, and does not handle input.
  *
- * <p>Coordinates:</p>
- * <ul>
- *   <li>Board is indexed as {@code board[x][y]} (x = column, y = row).</li>
- *   <li>UI draws each cell in a {@code cell x cell} square.</li>
- *   <li>HUD is an additional vertical strip of {@code hud} pixels above the grid.</li>
- * </ul>
+ * The server holds the full game state and rules.
+ * This renderer receives snapshots of that state and converts them into a single frame.
+ *
+ * WHAT IS RENDERED
+ * ---------------
+ * HUD:
+ *   A single text line above the board (score, mode, instructions, etc).
+ *
+ * Board:
+ *   Blue tiles represent walls.
+ *   Pink tiles represent regular pellets.
+ *   Green tiles represent power pellets.
+ *
+ * Characters:
+ *   Pac-Man is drawn from a directional sprite based on the current direction.
+ *   If the sprite resource is missing, a yellow circle is drawn as a fallback.
+ *
+ *   Ghosts are drawn as sprites only after they are released.
+ *   When a ghost is eatable, it is drawn smaller for a clear visual cue.
+ *
+ * COORDINATES
+ * -----------
+ * The board is indexed as board[x][y].
+ * x is the column index, y is the row index.
+ *
+ * Each cell is drawn as a square of size cell by cell pixels.
+ * A HUD strip of height hud pixels is reserved above the board.
+ *
+ * RESPONSIBILITIES
+ * ---------------
+ * Initialize the drawing canvas and coordinate scaling.
+ * Draw one frame: HUD, board tiles, ghosts, and Pac-Man.
+ * Draw the end screen.
  */
 public class MyGameUI {
 
-    /** Pixel size of a single grid cell. */
     private final int cell;
-
-    /** HUD height in pixels above the board area. */
     private final int hud;
 
-    /** Canvas width in pixels (computed from board width * cell). */
     private int canvasW = 0;
-
-    /** Canvas height in pixels (computed from board height * cell + hud). */
     private int canvasH = 0;
 
-    /**
-     * Tile codes as used by the engine (derived from {@link Game#getIntColor(Color, int)}).
-     * We keep them here to render the server board consistently.
-     */
     private final int BLUE  = Game.getIntColor(Color.BLUE, 0);
     private final int PINK  = Game.getIntColor(Color.PINK, 0);
     private final int GREEN = Game.getIntColor(Color.GREEN, 0);
 
     /**
-     * Creates a UI renderer.
+     * Creates a new UI renderer.
      *
-     * @param cell pixel size of one board cell (e.g., 32)
-     * @param hud  height in pixels for the HUD strip on top (e.g., 60)
+     * @param cell pixel size of one grid cell
+     * @param hud  height in pixels reserved for the HUD area above the board
      */
     public MyGameUI(int cell, int hud) {
         this.cell = cell;
@@ -59,10 +74,12 @@ public class MyGameUI {
     }
 
     /**
-     * Initializes StdDraw canvas size and coordinate system.
+     * Initializes the StdDraw canvas and coordinate system.
      *
-     * <p>The coordinate system is set so that (0,0) is the bottom-left corner of the board,
-     * and the top area above the board is reserved for the HUD.</p>
+     * Coordinate setup:
+     * The drawing area spans from 0 to canvasW on the x-axis,
+     * and from 0 to canvasH on the y-axis.
+     * The HUD area is located above the board.
      *
      * @param w board width in cells
      * @param h board height in cells
@@ -80,21 +97,24 @@ public class MyGameUI {
     /**
      * Draws a single frame of the game.
      *
-     * <p>Rendering order:</p>
-     * <ol>
-     *   <li>Clear background</li>
-     *   <li>HUD text line</li>
-     *   <li>Board tiles (walls + pellets)</li>
-     *   <li>Ghost sprites (released only)</li>
-     *   <li>Pac-Man sprite (direction-based), with fallback shape</li>
-     * </ol>
+     * DRAW ORDER
+     * ----------
+     * 1. Clear background
+     * 2. Draw HUD line
+     * 3. Draw board tiles (walls and pellets)
+     * 4. Draw ghosts (released only)
+     * 5. Draw Pac-Man (directional sprite with fallback)
      *
-     * @param board   game board values (indexed {@code [x][y]})
-     * @param pacX    Pac-Man x coordinate in cells
-     * @param pacY    Pac-Man y coordinate in cells
-     * @param pacDir  Pac-Man direction code (server constants: LEFT/RIGHT/UP/DOWN)
-     * @param ghosts  server ghosts array (may be {@code null})
-     * @param hudLine text to show in the HUD (may be {@code null})
+     * Notes:
+     * This method performs rendering only.
+     * It does not change the server state.
+     *
+     * @param board   board tile matrix indexed as board[x][y]
+     * @param pacX    Pac-Man x position in cells
+     * @param pacY    Pac-Man y position in cells
+     * @param pacDir  Pac-Man direction (server constants)
+     * @param ghosts  server ghost array (may be null)
+     * @param hudLine HUD text to display (may be null)
      */
     public void draw(int[][] board, int pacX, int pacY, int pacDir, MyGameServer.Ghost[] ghosts, String hudLine) {
         int w = board.length;
@@ -112,11 +132,9 @@ public class MyGameUI {
             for (int y = 0; y < h; y++) {
                 int v = board[x][y];
 
-                // cell center in pixels
                 double cx = x * cell + cell * 0.5;
                 double cy = y * cell + cell * 0.5;
 
-                // Walls: draw only the visible edges (clean maze look)
                 if (v == BLUE) {
                     StdDraw.setPenColor(new Color(0, 140, 255));
                     StdDraw.setPenRadius(0.004);
@@ -138,12 +156,10 @@ public class MyGameUI {
 
                     StdDraw.setPenRadius();
                 }
-                // Small pellet
                 else if (v == PINK) {
                     StdDraw.setPenColor(Color.PINK);
                     StdDraw.filledCircle(cx, cy, cell * 0.08);
                 }
-                // Power pellet
                 else if (v == GREEN) {
                     StdDraw.setPenColor(Color.GREEN);
                     StdDraw.filledCircle(cx, cy, cell * 0.14);
@@ -159,7 +175,7 @@ public class MyGameUI {
                 double gx = g.x * cell + cell * 0.5;
                 double gy = g.y * cell + cell * 0.5;
 
-                // Visually smaller when ghost is eatable
+                // ✅ קטן משמעותית כשהרוח אכילה
                 double scale = g.isEatable() ? 0.55 : 0.95;
                 double gSize = cell * scale;
 
@@ -184,7 +200,6 @@ public class MyGameUI {
         if (pacUrl != null) {
             StdDraw.picture(px, py, pacUrl.toString(), size, size);
         } else {
-            // Fallback if sprite is missing
             StdDraw.setPenColor(Color.YELLOW);
             StdDraw.filledCircle(px, py, cell * 0.28);
         }
@@ -193,12 +208,13 @@ public class MyGameUI {
     }
 
     /**
-     * Draws a simple end screen overlay.
+     * Draws the end screen.
      *
-     * <p>This method does not change game state; it only renders a message.
-     * The outer loop should handle reading the quit key and exiting.</p>
+     * This method renders a static message only.
+     * It does not change game state and does not handle input.
+     * The caller decides when to exit the program.
      *
-     * @param won {@code true} for a win screen, {@code false} for game over
+     * @param won true if the player won, false if the player lost
      */
     public void drawEndScreen(boolean won) {
         StdDraw.clear(Color.BLACK);
