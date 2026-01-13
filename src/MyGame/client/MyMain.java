@@ -7,22 +7,61 @@ import assignments.StdDraw;
 import exe.ex3.game.PacManAlgo;
 
 /**
- * Client entry point:
- * - renders UI (StdDraw)
- * - handles input (InputController)
- * - schedules ticks and steps (manual/auto timing)
- * Server-side game rules are in {@link MyGameServer}.
+ * Application entry point (client).
+ *
+ * <p>This class is responsible only for the <b>runtime loop</b>:</p>
+ * <ul>
+ *   <li>Bootstraps the {@link MyGameServer} (game state + rules).</li>
+ *   <li>Initializes {@link MyGameUI} (rendering with {@link StdDraw}).</li>
+ *   <li>Reads input via {@link InputController}.</li>
+ *   <li>Runs either <b>MANUAL</b> mode (player controls Pac-Man) or <b>AUTO</b> mode (algorithm controls Pac-Man).</li>
+ * </ul>
+ *
+ * <h2>Timing model</h2>
+ * <ul>
+ *   <li><b>Manual mode:</b> Pac-Man moves only on input; ghosts advance by calling {@link MyGameServer#tick()}
+ *       on a fixed timer ({@link #GHOST_TICK_MS}).</li>
+ *   <li><b>Auto mode:</b> The algorithm chooses direction via {@link PacManAlgo#move(exe.ex3.game.PacmanGame)}.
+ *       The adapter {@link MyPacmanGameAdapter#move(int)} performs the step (Pac move + tick) on a fixed timer
+ *       ({@link #AUTO_STEP_MS}).</li>
+ * </ul>
+ *
+ * <h2>Controls</h2>
+ * <ul>
+ *   <li><b>SPACE</b> - start / pause</li>
+ *   <li><b>M</b> - toggle MANUAL/AUTO</li>
+ *   <li><b>Arrows / WASD</b> - manual direction</li>
+ *   <li><b>Q</b> - quit (shows end screen)</li>
+ * </ul>
  */
 public class MyMain {
 
+    /**
+     * Small loop pause to reduce CPU usage and keep rendering responsive.
+     * This is not the gameplay tick rate (see {@link #GHOST_TICK_MS} and {@link #AUTO_STEP_MS}).
+     */
     private static final int LOOP_PAUSE_MS  = 10;
 
-    // manual: ghosts keep moving even if pacman doesn't
+    /**
+     * Manual mode: ghost/world tick interval (ms).
+     * Pac-Man moves immediately on input; {@link MyGameServer#tick()} advances ghosts/collisions/score.
+     */
     private static final int GHOST_TICK_MS  = 120;
 
-    // auto: each step includes pac move + tick
+    /**
+     * Auto mode: interval (ms) between algorithm steps.
+     * Each auto step calls {@code algo.move(adapter)} and then {@code adapter.move(dir)} (which includes a tick).
+     */
     private static final int AUTO_STEP_MS   = 120;
 
+    /**
+     * Program entry.
+     *
+     * <p>Creates server + UI + optional algorithm and runs the main loop
+     * until the server status leaves {@link MyGameServer#PLAY}.</p>
+     *
+     * @param args command line arguments (not used)
+     */
     public static void main(String[] args) {
 
         // -------- Server --------
@@ -34,20 +73,25 @@ public class MyMain {
         ui.initCanvas(server.getBoard().length, server.getBoard()[0].length);
 
         // -------- Auto Algo --------
+        // Adapter makes our server compatible with the engine's PacmanGame API expected by Ex3Algo.
         MyPacmanGameAdapter adapter = new MyPacmanGameAdapter(server);
         PacManAlgo algo = new Ex3Algo();
 
-        // default: MANUAL + STOPPED until SPACE
+        // Default: MANUAL + PAUSED (must press SPACE to start).
         boolean autoMode = false;
         boolean running  = false;
 
+        // Timing state (in ms)
         long lastGhostTick = 0;
         long lastAutoStep  = 0;
 
+        // Input handling (edge detection for toggles)
         InputController input = new InputController();
 
+        // -------- Main loop --------
         while (server.getStatus() == MyGameServer.PLAY) {
 
+            // Render a frame
             ui.draw(
                     server.getBoard(),
                     server.getPacX(), server.getPacY(), server.getPacDir(),
@@ -55,13 +99,16 @@ public class MyMain {
                     buildHud(server, autoMode, running)
             );
 
+            // Read user input (depends on current state)
             InputController.Actions a = input.poll(running, autoMode);
 
+            // Quit immediately (show final screen)
             if (a.quit) {
                 ui.drawEndScreen(server.isWon());
                 return;
             }
 
+            // Start/Pause toggle
             if (a.spaceToggle) {
                 running = !running;
                 lastGhostTick = 0;
@@ -69,6 +116,7 @@ public class MyMain {
                 input.resetEdges();
             }
 
+            // Manual/Auto toggle
             if (a.modeToggle) {
                 autoMode = !autoMode;
                 lastGhostTick = 0;
@@ -76,6 +124,7 @@ public class MyMain {
                 input.resetEdges();
             }
 
+            // If paused, do not advance simulation
             if (!running) {
                 StdDraw.pause(LOOP_PAUSE_MS);
                 continue;
@@ -84,7 +133,7 @@ public class MyMain {
             long now = System.currentTimeMillis();
 
             if (!autoMode) {
-                // MANUAL: pacman steps only on input; ghosts tick on timer
+                // MANUAL: Pac-Man steps only on input; ghosts tick on timer
                 if (a.arrowDir != MyGameServer.STAY) server.movePacByDir(a.arrowDir);
                 if (a.wasdDir  != MyGameServer.STAY) server.movePacByDir(a.wasdDir);
 
@@ -101,15 +150,23 @@ public class MyMain {
                 }
             }
 
+            // Small delay for responsiveness and CPU friendliness
             StdDraw.pause(LOOP_PAUSE_MS);
         }
 
+        // Game ended (won or lost)
         ui.drawEndScreen(server.isWon());
     }
 
     /**
-     * Builds a compact top HUD line.
-     * Keep UI text here (client), not in the server.
+     * Builds the HUD line shown at the top of the screen.
+     *
+     * <p>UI text lives on the client side (here) to keep the server purely game-logic.</p>
+     *
+     * @param server   current server instance
+     * @param autoMode {@code true} if AUTO mode is active
+     * @param running  {@code true} if simulation is currently running (not paused)
+     * @return a compact, human-readable status line
      */
     private static String buildHud(MyGameServer server, boolean autoMode, boolean running) {
         return "Mode: " + (autoMode ? "AUTO" : "MANUAL") +
