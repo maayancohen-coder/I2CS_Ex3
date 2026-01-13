@@ -85,14 +85,17 @@ public class InputController {
      */
     public Actions poll(boolean running, boolean autoMode) {
         Actions a = new Actions();
+        boolean spaceTypedThisFrame = false;
 
         // typed keys
         while (StdDraw.hasNextKeyTyped()) {
             char k = StdDraw.nextKeyTyped();
 
             if (k == 'q' || k == 'Q') a.quit = true;
-            if (k == ' ') a.spaceToggle = true;
-
+            if (k == ' ') {
+                a.spaceToggle = true;
+                spaceTypedThisFrame = true;
+            }
             // M toggle (English/Hebrew)
             if (k == 'm' || k == 'M' || k == 'מ' || k == 'ם') a.modeToggle = true;
 
@@ -105,9 +108,10 @@ public class InputController {
             }
         }
 
-        // fallback SPACE edge via isKeyPressed
         boolean spacePressed = StdDraw.isKeyPressed(KeyEvent.VK_SPACE);
-        if (spacePressed && !prevSpace) a.spaceToggle = true;
+        if (!spaceTypedThisFrame && spacePressed && !prevSpace) {
+            a.spaceToggle = true;
+        }
         prevSpace = spacePressed;
 
         // arrows: edge detection (one step per press)
@@ -125,7 +129,9 @@ public class InputController {
      */
     public void resetEdges() {
         prevLeft = prevRight = prevUp = prevDown = false;
-        prevSpace = false;
+        prevLeft = prevRight = prevUp = prevDown = false;
+        prevSpace = StdDraw.isKeyPressed(KeyEvent.VK_SPACE);
+
     }
 
     /**

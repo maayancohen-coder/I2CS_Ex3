@@ -212,8 +212,7 @@ public class MyMain {
         return "Mode: " + (autoMode ? "AUTO" : "MANUAL") +
                 " | " + (running ? "RUNNING" : "PAUSED") +
                 " | Pink: " + server.getPinkEaten() + "/" + server.getPinkTotal() +
-                " (left " + server.getPinkLeft() + ")" +
-                " | Score: " + server.getScore() +
-                " | keys: SPACE start/pause, M toggle, arrows/WASD manual, Q quit";
+                " | Score: " + server.getScore();
+
     }
 }

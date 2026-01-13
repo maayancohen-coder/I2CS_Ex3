@@ -5,55 +5,56 @@ import exe.ex3.game.GhostCL;
 import exe.ex3.game.PacmanGame;
 
 /**
- * Adapter between {@link MyGameServer} (your server-side implementation)
- * and the course engine interface {@link PacmanGame}.
+ * Adapter between the server implementation and the course engine interface.
  *
- * <p>This class allows the external "Ex3" runner / GUI / algorithm tester
- * (which expects a {@code PacmanGame}) to operate on your own game server
- * without changing the server code.</p>
+ * OVERVIEW
+ * --------
+ * The course framework expects a PacmanGame object.
+ * This class wraps MyGameServer and exposes it through the PacmanGame interface,
+ * so external code can run on top of your server without changing the server itself.
  *
- * <h2>Design notes</h2>
- * <ul>
- *   <li><b>Thin wrapper:</b> Most methods delegate directly to {@link MyGameServer}.</li>
- *   <li><b>Single-step move:</b> {@link #move(int)} performs one Pac-Man step and then advances the world by one tick.</li>
- *   <li><b>Ghost bridging:</b> Server ghosts are wrapped as {@link GhostCL} objects via {@link SimpleGhostCL}.</li>
- * </ul>
+ * RESPONSIBILITIES
+ * ---------------
+ * Initialize the server according to the engine request.
+ * Delegate board and entity queries to the server.
+ * Perform a single step when move is called.
+ * Convert server ghosts into GhostCL objects expected by the engine.
+ *
+ * SINGLE STEP POLICY
+ * ------------------
+ * move(dir) performs exactly one logical step:
+ * 1. Move Pac-Man one step in the requested direction.
+ * 2. Advance the simulation by one tick on the server.
+ *
+ * STATUS MAPPING
+ * --------------
+ * The server status is mapped to the engine constants:
+ * INIT, PLAY, DONE.
+ *
+ * NOTES
+ * -----
+ * Some engine parameters in init are accepted for compatibility but are not used here,
+ * because the server is responsible for building its own default level.
  */
 public class MyPacmanGameAdapter implements PacmanGame {
 
-    /**
-     * Underlying game server that contains the real game state and logic.
-     */
     private final MyGameServer g;
 
-    /**
-     * Creates a new adapter for the given server instance.
-     *
-     * @param server the server to adapt (must not be {@code null})
-     */
     public MyPacmanGameAdapter(MyGameServer server) {
         this.g = server;
     }
 
     /**
-     * Initializes the game for the external engine.
+     * Initializes the game session for the engine.
      *
-     * <p>In this adapter, {@code level}, {@code mapStr}, {@code seed},
-     * {@code ghostSpeed}, {@code dt}, and {@code something} are currently ignored
-     * because the server is responsible for building the default level on its own.</p>
+     * Behavior:
+     * The server initializes its default level.
+     * The cyclic flag is synchronized with the engine request.
      *
-     * <p>The only parameter that is actively respected is {@code cyclic}:
-     * if the engine requests cyclic behavior and the server differs,
-     * the adapter toggles it to match.</p>
+     * Parameters:
+     * level, mapStr, seed, ghostSpeed, dt, and something are currently ignored by this adapter.
      *
-     * @param level       requested level id (currently ignored)
-     * @param mapStr      requested map representation (currently ignored)
-     * @param cyclic      whether the map should be cyclic (tunnels wrap around)
-     * @param seed        random seed (currently ignored)
-     * @param ghostSpeed  ghost speed factor (currently ignored)
-     * @param dt          engine tick time in ms (currently ignored)
-     * @param something   extra engine parameter (currently ignored)
-     * @return "OK" if initialization succeeded
+     * @return "OK" on success
      */
     @Override
     public String init(int level, String mapStr, boolean cyclic, long seed, double ghostSpeed, int dt, int something) {
@@ -63,23 +64,23 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Starts the game loop (engine hook).
+     * Engine hook for starting gameplay.
      *
-     * <p>This adapter does not need to start a separate thread or loop,
-     * because the engine drives the game by repeatedly calling {@link #move(int)}.</p>
+     * This adapter does not need to run its own loop.
+     * The engine advances the game by calling move repeatedly.
      */
     @Override
     public void play() { }
 
     /**
-     * Performs one engine step:
-     * <ol>
-     *   <li>Moves Pac-Man one step in the requested direction.</li>
-     *   <li>Advances the server simulation by one {@code tick} (ghost movement, collisions, scoring, etc.).</li>
-     * </ol>
+     * Executes one engine step.
      *
-     * @param dir direction code as defined by the course engine
-     * @return current game snapshot string (delegated to {@link #getData(int)})
+     * Step definition:
+     * Move Pac-Man by direction.
+     * Advance the server simulation by one tick.
+     *
+     * @param dir direction code provided by the engine
+     * @return a compact textual snapshot produced by getData(0)
      */
     @Override
     public String move(int dir) {
@@ -90,10 +91,10 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Ends the game session.
+     * Ends the session.
      *
-     * @param code engine-specific code (ignored)
-     * @return "DONE" after cleanup
+     * @param code engine-specific code (not used)
+     * @return "DONE" after server cleanup
      */
     @Override
     public String end(int code) {
@@ -102,12 +103,13 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Returns a compact textual snapshot of the game state.
+     * Returns a compact textual snapshot of the current game state.
      *
-     * <p>Format is intentionally simple for debugging / engine compatibility.</p>
+     * Current format includes:
+     * score and remaining pink pellets.
      *
-     * @param code engine-specific code (ignored)
-     * @return string containing score and remaining pellets (pink)
+     * @param code engine-specific code (not used)
+     * @return snapshot string for debugging and compatibility
      */
     @Override
     public String getData(int code) {
@@ -117,11 +119,8 @@ public class MyPacmanGameAdapter implements PacmanGame {
     /**
      * Returns the board matrix as expected by the engine.
      *
-     * <p>The returned matrix is the server's live board reference.
-     * If your engine/GUI ever mutates it, consider returning a deep copy instead.</p>
-     *
-     * @param code engine-specific code (ignored)
-     * @return board as {@code int[][]}
+     * @param code engine-specific code (not used)
+     * @return the server board
      */
     @Override
     public int[][] getGame(int code) {
@@ -129,10 +128,10 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Returns Pac-Man position in the engine's "x,y" string format.
+     * Returns Pac-Man position formatted as x,y.
      *
-     * @param code engine-specific code (ignored)
-     * @return "x,y"
+     * @param code engine-specific code (not used)
+     * @return position string x,y
      */
     @Override
     public String getPos(int code) {
@@ -140,13 +139,14 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Returns all ghosts adapted to {@link GhostCL}.
+     * Returns ghosts adapted to the engine GhostCL interface.
      *
-     * <p>Each server ghost is wrapped by {@link SimpleGhostCL} so the engine
-     * can read ghost position/status without knowing server internals.</p>
+     * Behavior:
+     * Each server ghost is wrapped by SimpleGhostCL.
+     * If the server returns null, an empty array is returned.
      *
-     * @param code engine-specific code (ignored)
-     * @return array of ghosts, never {@code null}
+     * @param code engine-specific code (not used)
+     * @return array of GhostCL objects, never null
      */
     @Override
     public GhostCL[] getGhosts(int code) {
@@ -159,9 +159,9 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Maps the server status to the engine status constants ({@link #INIT}, {@link #PLAY}, {@link #DONE}).
+     * Maps server status to engine status constants.
      *
-     * @return engine-compatible status
+     * @return INIT, PLAY, or DONE
      */
     @Override
     public int getStatus() {
@@ -172,9 +172,7 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Indicates whether the game board is cyclic (wrap-around tunnels).
-     *
-     * @return {@code true} if cyclic
+     * @return true if the server board is cyclic
      */
     @Override
     public boolean isCyclic() {
@@ -182,66 +180,61 @@ public class MyPacmanGameAdapter implements PacmanGame {
     }
 
     /**
-     * Optional engine hook for keyboard input as a character.
+     * Optional engine hook.
+     * This adapter does not use key characters because movement is driven by move(dir).
      *
-     * <p>This adapter does not rely on this method because movement is driven
-     * through {@link #move(int)} with direction codes.</p>
-     *
-     * @return {@code null} (not used)
+     * @return null
      */
     @Override
     public Character getKeyChar() { return null; }
 
     /**
-     * Minimal {@link GhostCL} implementation that exposes a server ghost to the engine.
+     * Minimal GhostCL wrapper around a server ghost.
      *
-     * <p>Only the subset of methods used by the course engine/GUI are implemented.</p>
+     * OVERVIEW
+     * --------
+     * The engine expects GhostCL objects.
+     * The server uses its own Ghost structure.
+     * This wrapper exposes only the fields and behaviors that the engine needs:
+     * type, position, info string, eatable timer, and status.
+     *
+     * STATUS POLICY
+     * -------------
+     * If the ghost is released, status is PLAY.
+     * Otherwise, status is INIT.
      */
     private static class SimpleGhostCL implements GhostCL {
-
-        /**
-         * Underlying server ghost (position, timers, released flag).
-         */
         private final MyGameServer.Ghost gg;
 
-        /**
-         * @param gg server ghost instance to wrap
-         */
         SimpleGhostCL(MyGameServer.Ghost gg) {
             this.gg = gg;
         }
 
         /**
-         * Returns the ghost type expected by the engine.
+         * Returns a generic engine ghost type.
          *
-         * <p>Currently always returns {@link #RANDOM_WALK1} as a generic type.</p>
-         *
-         * @return engine ghost type constant
+         * @return RANDOM_WALK1
          */
         @Override public int getType() { return RANDOM_WALK1; }
 
         /**
-         * Returns ghost position in the engine's "x,y" string format.
-         *
-         * @param code engine-specific code (ignored)
-         * @return "x,y"
+         * @return position formatted as x,y
          */
         @Override public String getPos(int code) { return gg.x + "," + gg.y; }
 
         /**
-         * Human-readable info for debugging or GUI overlays.
-         *
-         * @return a short info string
+         * @return short info string for debugging and overlays
          */
         @Override public String getInfo() { return "MyGhost"; }
 
         /**
-         * Returns remaining time (in seconds) the ghost is eatable.
+         * Returns the remaining eatable time in seconds.
          *
-         * <p>If the ghost is not eatable, returns {@code -1.0} (engine convention).</p>
+         * Behavior:
+         * If the ghost is not eatable, return -1.0.
+         * Otherwise return the remaining seconds until eatableUntilMs.
          *
-         * @param code engine-specific code (ignored)
-         * @return seconds remaining, or {@code -1.0} if not eatable
+         * @return seconds remaining, or -1.0 if not eatable
          */
         @Override
         public double remainTimeAsEatable(int code) {
@@ -252,11 +245,7 @@ public class MyPacmanGameAdapter implements PacmanGame {
         }
 
         /**
-         * Returns the ghost status for the engine.
-         *
-         * <p>Maps {@code released} to {@link #PLAY}, otherwise {@link #INIT}.</p>
-         *
-         * @return engine-compatible status
+         * @return PLAY if released, otherwise INIT
          */
         @Override
         public int getStatus() {
