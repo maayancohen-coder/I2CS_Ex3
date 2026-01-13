@@ -1,157 +1,64 @@
-# I2CS_Ex3
-🎮 Pac-Man Reimagined — Exercise 3
-<img width="846" height="784" alt="image" src="https://github.com/user-attachments/assets/d338c75b-744c-4904-9b34-c3c475a5c114" />
+# Pac-Man Game – Custom Server & Client (Ex3)
 
-A modern, fully tested Pac-Man implementation with a clean server-client architecture,
-algorithmic control, and extensible design.
+This project is a complete implementation of a Pac-Man game, developed as part of Exercise 3.
+It includes a custom-built game server, a graphical client implemented with StdDraw,
+a smart Pac-Man algorithm, and a comprehensive test suite.
 
-🧠 Project Idea
+The project was designed with a clear separation between server-side logic and client-side rendering,
+while remaining compatible with the course engine interfaces.
 
-This project is a complete re-implementation of the classic Pac-Man game, developed for Exercise 3.
+---
 
-The main goal was not only to recreate the game, but to design a robust game server, a clean graphical client, and a flexible adapter that allows external algorithms to control Pac-Man seamlessly.
+## Project Overview
 
-The result is a well-structured, fully tested system that supports both manual gameplay and automatic algorithm-driven gameplay.
+The game features:
+- A fully custom Pac-Man game server
+- A graphical client using StdDraw
+- Manual and automatic (algorithm-driven) play modes
+- A custom Pac-Man decision algorithm
+- Extensive JUnit tests, including edge cases
+- Runnable JAR versions of the project
+- A short video demonstration of gameplay
 
-🏗 Architecture Overview
+---
 
-The project is divided into three clearly separated layers:
+## How to Run
 
-1️⃣ Server Side — Game Logic
+### Run from JAR
+Download the runnable JAR from the GitHub Releases section and run:
 
-The server contains all core game mechanics and rules:
+### Run from IntelliJ
+Run the following main class:
 
-Board and maze representation
+---
 
-Pac-Man movement and collisions
+## Repository Structure
 
-Ghost behavior and states
+- src – full source code (client and server)
+- tests – JUnit test suite
+- Ex3_docs – detailed technical documentation
+- videoOfGame – gameplay and explanation video
+- README.md – this file
 
-Scoring system
+---
 
-Power pellets and eatable ghosts
+## GitHub Releases
 
-Win / lose conditions
+Each release contains:
+- Ex3_2.jar – client-only solution
+- Ex3_3.jar – full solution (client and server)
+- Ex3_docs.zip – documentation files
+- Ex3_all_src.zip – complete source code
 
-Cyclic tunnels (wrap-around map)
+---
 
-📌 Main class:
+## Video Demonstration
 
-MyGameServer
+A short video (up to 120 seconds) explains the server-side implementation
+and demonstrates the Pac-Man game running on this project.
 
-The server is completely independent of graphics, input, or timing.
+---
 
-2️⃣ Client Side — Rendering & Input
+## Author
 
-The client is responsible for:
-
-Rendering the game using StdDraw
-
-Handling keyboard input
-
-Managing the main game loop and timing
-
-Displaying a clean HUD with game status
-
-📌 Main classes:
-
-MyMain – application entry point
-
-MyGameUI – rendering logic
-
-InputController – keyboard input handling
-
-3️⃣ Adapter Layer — Engine Integration
-
-To integrate with the course engine and algorithms, the project includes:
-
-MyPacmanGameAdapter
-
-This adapter implements the PacManGame interface and bridges the external engine with the custom server implementation.
-
-✔ Existing algorithms work without modification
-✔ Server logic remains isolated and clean
-✔ Clear separation of responsibilities
-
-🎯 Game Modes
-🕹 MANUAL Mode
-
-Player controls Pac-Man using the keyboard
-
-Arrow keys or WASD supported
-
-🤖 AUTO Mode
-
-Pac-Man is controlled by an algorithm
-
-Each move is decided automatically
-
-Ideal for testing, demonstrations, and analysis
-
-⏯ The game can be paused or resumed at any time using the SPACE key.
-
-🧪 Testing Strategy
-
-The project includes extensive JUnit testing, designed to catch even subtle bugs.
-
-✔ Unit Tests
-
-Algorithm helper methods
-
-Direction logic
-
-Parsing and utility functions
-
-Edge cases and safety checks
-
-✔ Contract Tests
-
-Adapter correctness
-
-Server invariants
-
-API stability
-
-✔ Integration Tests
-
-Long AUTO gameplay runs
-
-Score and pellet invariants
-
-Full system stability under load
-
-All tests are designed to fail immediately if core assumptions are violated.
-
-📚 Documentation
-
-Detailed JavaDoc for all server-side classes
-
-Clear architectural explanation
-
-Design decisions documented in English
-
-This README serves as a high-level overview of the project.
-
-📦 Build Artifacts
-
-The GitHub release includes:
-
-Ex3_2.jar — Client-only solution
-
-Ex3_3.jar — Full solution (Client + Server)
-
-Ex3_docs.zip — Documentation
-
-Ex3_all_src.zip — Full source code and resources
-
-All JAR files are runnable.
-
-🎥 Demo Video
-
-A short demo video (up to 120 seconds) demonstrates:
-
-Server-side design
-
-Manual and automatic gameplay
-
-Core features of the implementation
+Developed as part of the Intro to Computer Science / Object-Oriented Programming coursework.
