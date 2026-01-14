@@ -60,8 +60,9 @@ Each release contains:
 
 ## Video Demonstration
 
-A short video (up to 120 seconds) explains the server-side implementation
-and demonstrates the Pac-Man game running on this project.
+A short video explaining the server-side implementation
+and demonstrating the Pac-Man game is available in the GitHub Release assets.
+
 
 ---
 
