@@ -6,3 +6,23 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# IntelliJ / IDE
+.idea/
+*.iml
+
+# Build / output folders
+out/
+target/
+bin/
+*.class
+
+# Artifacts
+*.jar
+*.zip
+
+# Videos (GitHub blocks >100MB)
+*.mp4
+
+# OS junk
+.DS_Store
+Thumbs.db

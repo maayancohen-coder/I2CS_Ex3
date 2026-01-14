@@ -191,10 +191,10 @@ public class MyGameUI {
         double py = pacY * cell + cell * 0.5;
         double size = cell * 0.95;
 
-        String imgPath = "/media/p1.left.png";
-        if (pacDir == MyGameServer.RIGHT) imgPath = "/media/p1.right.png";
-        else if (pacDir == MyGameServer.UP) imgPath = "/media/p1.up.png";
-        else if (pacDir == MyGameServer.DOWN) imgPath = "/media/p1.down.png";
+        String imgPath = "//p1.left.png";
+        if (pacDir == MyGameServer.RIGHT) imgPath = "//p1.right.png";
+        else if (pacDir == MyGameServer.UP) imgPath = "//p1.up.png";
+        else if (pacDir == MyGameServer.DOWN) imgPath = "//p1.down.png";
 
         URL pacUrl = MyGameUI.class.getResource(imgPath);
         if (pacUrl != null) {

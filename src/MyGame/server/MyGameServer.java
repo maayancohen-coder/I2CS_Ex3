@@ -132,9 +132,9 @@ public class MyGameServer {
     private void initGhosts() {
         long now = System.currentTimeMillis();
         ghosts = new Ghost[] {
-                new Ghost(cx - 1, cy, now + 0,    "/media/g1.png"),
-                new Ghost(cx,     cy, now + 3000, "/media/g2.png"),
-                new Ghost(cx + 1, cy, now + 6000, "/media/g3.png")
+                new Ghost(cx - 1, cy, now + 0, "//g1.png"),
+                new Ghost(cx,     cy, now + 3000, "//g2.png"),
+                new Ghost(cx + 1, cy, now + 6000, "//g3.png")
         };
         for (Ghost g : ghosts) {
             g.released = false;

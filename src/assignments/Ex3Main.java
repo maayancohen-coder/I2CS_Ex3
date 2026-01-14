@@ -3,6 +3,7 @@ import exe.ex3.game.Game;
 import exe.ex3.game.PacManAlgo;
 import exe.ex3.game.PacmanGame;
 
+
 /**
  * Ex3, School of Computer Science, Ariel University.
  *
@@ -22,6 +23,7 @@ import exe.ex3.game.PacmanGame;
  *
  */
 public class Ex3Main {
+
     private static Character _cmd;
     public static void main(String[] args) {
         play1();

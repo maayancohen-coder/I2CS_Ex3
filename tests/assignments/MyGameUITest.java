@@ -58,7 +58,7 @@ public class MyGameUITest {
         setField(g, "x", 3);
         setField(g, "y", 3);
         setField(g, "released", false);
-        setField(g, "imgPath", "/media/does-not-exist.png");
+        setField(g, "imgPath", "//does-not-exist.png");
 
         assertDoesNotThrow(() ->
                 ui.draw(board, 1, 1, MyGameServer.RIGHT, new MyGameServer.Ghost[]{g}, "HUD")
