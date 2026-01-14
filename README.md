@@ -44,11 +44,17 @@ Run the following main class:
 
 ## GitHub Releases
 
+All runnable files, source code, and documentation are available
+in the GitHub Releases section.
+
+👉 Download the latest release here:  
+https://github.com/maayancohen-coder/I2CS_Ex3/releases/tag/v1.0
+
 Each release contains:
-- Ex3_2.jar – client-only solution
-- Ex3_3.jar – full solution (client and server)
-- Ex3_docs.zip – documentation files
-- Ex3_all_src.zip – complete source code
+- Ex3_2.jar – client-only solution  
+- Ex3_3.jar – full solution (client and server)  
+- Ex3_docs.zip – documentation files  
+- Ex3_all_src.zip – complete source code  
 
 ---
 
